@@ -8,11 +8,16 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
+// Could be named as AuthService
+
 @RequiredArgsConstructor
 @Service
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
 
     public User signup(String email, String password) {
@@ -24,5 +29,13 @@ public class UserService {
         user.setRole(Role.USER);
         user.setPasswordHash(passwordEncoder.encode(password));
         return userRepository.save(user);
+    }
+
+    public String login(String email, String password) {
+        Optional<User> user = userRepository.findByEmail(email);
+        if(user.isEmpty() || !passwordEncoder.matches(password, user.get().getPasswordHash())) {
+            return null;
+        }
+        return jwtService.generateToken(user.get());
     }
 }
